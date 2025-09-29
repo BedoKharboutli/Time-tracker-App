@@ -13,12 +13,25 @@ import Button from '../components/Button';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 import { theme } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 
 const HomeScreen = ({ navigation }) => {
   const { user, signOut } = useAuth();
+  const { addSession, getTodayTotalDuration, getSessionsGroupedByDate } = useData();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [time, setTime] = useState(0); // Time in seconds
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   const [todayTotal, setTodayTotal] = useState(0); // Today's total in seconds
+
+  // Load today's total when component mounts or data changes
+  useEffect(() => {
+    const loadTodayTotal = () => {
+      const total = getTodayTotalDuration();
+      setTodayTotal(total);
+    };
+    
+    loadTodayTotal();
+  }, [getTodayTotalDuration]);
 
   // Timer effect
   useEffect(() => {
@@ -46,11 +59,31 @@ const HomeScreen = ({ navigation }) => {
     return `${hours}h ${minutes}m`;
   };
 
-  const handleTimerToggle = () => {
+  const handleTimerToggle = async () => {
     if (isTimerRunning) {
-      // Stop timer and add to today's total
-      setTodayTotal(prev => prev + time);
-      setTime(0);
+      // Stop timer and save session
+      try {
+        const endTime = new Date();
+        const sessionData = {
+          startTime: sessionStartTime.toISOString(),
+          endTime: endTime.toISOString(),
+          duration: time,
+          date: new Date().toISOString().split('T')[0],
+        };
+
+        await addSession(sessionData);
+        
+        // Update today's total and reset timer
+        setTodayTotal(prev => prev + time);
+        setTime(0);
+        setSessionStartTime(null);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to save session. Please try again.');
+        console.error('Error saving session:', error);
+      }
+    } else {
+      // Start timer
+      setSessionStartTime(new Date());
     }
     setIsTimerRunning(!isTimerRunning);
   };
@@ -77,12 +110,46 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  // Sample recent days data
-  const recentDays = [
-    { day: 'Yesterday', date: 'May 20, 2024', duration: 29700 }, // 8h 15m in seconds
-    { day: 'Friday', date: 'May 19, 2024', duration: 27900 }, // 7h 45m in seconds
-    { day: 'Thursday', date: 'May 18, 2024', duration: 28800 }, // 8h 0m in seconds
-  ];
+  // Get recent days data from real sessions
+  const getRecentDays = () => {
+    const groupedSessions = getSessionsGroupedByDate();
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Filter out today and get last 3 days with data
+    const recentDays = groupedSessions
+      .filter(group => group.date !== today)
+      .slice(0, 3)
+      .map(group => {
+        const date = new Date(group.date);
+        const totalDuration = group.sessions.reduce((total, session) => total + session.duration, 0);
+        
+        // Format date display
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        
+        let dayLabel;
+        if (group.date === yesterday.toISOString().split('T')[0]) {
+          dayLabel = 'Yesterday';
+        } else {
+          dayLabel = date.toLocaleDateString('en-US', { weekday: 'long' });
+        }
+        
+        return {
+          day: dayLabel,
+          date: date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          }),
+          duration: totalDuration,
+        };
+      });
+    
+    return recentDays;
+  };
+
+  const recentDays = getRecentDays();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -138,17 +205,25 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.recentSection}>
           <Text style={styles.sectionTitle}>Recent Days</Text>
           <View style={styles.recentList}>
-            {recentDays.map((item, index) => (
-              <View key={index} style={styles.recentItem}>
-                <View style={styles.recentItemLeft}>
-                  <Text style={styles.recentDay}>{item.day}</Text>
-                  <Text style={styles.recentDate}>{item.date}</Text>
+            {recentDays.length > 0 ? (
+              recentDays.map((item, index) => (
+                <View key={index} style={styles.recentItem}>
+                  <View style={styles.recentItemLeft}>
+                    <Text style={styles.recentDay}>{item.day}</Text>
+                    <Text style={styles.recentDate}>{item.date}</Text>
+                  </View>
+                  <Text style={styles.recentDuration}>
+                    {formatDuration(item.duration)}
+                  </Text>
                 </View>
-                <Text style={styles.recentDuration}>
-                  {formatDuration(item.duration)}
-                </Text>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="time-outline" size={48} color={theme.colors.textSecondary} />
+                <Text style={styles.emptyStateText}>No recent activity</Text>
+                <Text style={styles.emptyStateSubtext}>Start your first timer session!</Text>
               </View>
-            ))}
+            )}
           </View>
         </View>
       </ScrollView>
@@ -268,6 +343,27 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.lg,
     fontFamily: theme.fonts.bold,
     color: theme.colors.textPrimary,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.cardLight,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    ...theme.shadows.sm,
+  },
+  emptyStateText: {
+    fontSize: theme.fontSizes.base,
+    fontFamily: theme.fonts.medium,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.sm,
+  },
+  emptyStateSubtext: {
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.regular,
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.xs,
   },
 });
 

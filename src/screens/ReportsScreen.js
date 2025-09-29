@@ -8,15 +8,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import { useData } from '../context/DataContext';
 
 const ReportsScreen = () => {
-  // Sample report data
-  const weeklyStats = {
-    totalHours: 42.5,
-    averageDaily: 6.1,
-    mostProductiveDay: 'Tuesday',
-    totalSessions: 28,
-  };
+  const { getWeeklyStats } = useData();
+  
+  // Get real weekly statistics from user data
+  const weeklyStats = getWeeklyStats();
 
   const StatCard = ({ icon, title, value, subtitle }) => (
     <View style={styles.statCard}>
@@ -40,28 +38,36 @@ const ReportsScreen = () => {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>This Week</Text>
-          <View style={styles.statsGrid}>
-            <StatCard
-              icon="time-outline"
-              title="Total Hours"
-              value={`${weeklyStats.totalHours}h`}
-            />
-            <StatCard
-              icon="trending-up-outline"
-              title="Daily Average"
-              value={`${weeklyStats.averageDaily}h`}
-            />
-            <StatCard
-              icon="calendar-outline"
-              title="Most Productive"
-              value={weeklyStats.mostProductiveDay}
-            />
-            <StatCard
-              icon="play-circle-outline"
-              title="Total Sessions"
-              value={weeklyStats.totalSessions}
-            />
-          </View>
+          {weeklyStats.totalSessions > 0 ? (
+            <View style={styles.statsGrid}>
+              <StatCard
+                icon="time-outline"
+                title="Total Hours"
+                value={`${weeklyStats.totalHours}h`}
+              />
+              <StatCard
+                icon="trending-up-outline"
+                title="Daily Average"
+                value={`${weeklyStats.averageDaily}h`}
+              />
+              <StatCard
+                icon="calendar-outline"
+                title="Most Productive"
+                value={weeklyStats.mostProductiveDay}
+              />
+              <StatCard
+                icon="play-circle-outline"
+                title="Total Sessions"
+                value={weeklyStats.totalSessions}
+              />
+            </View>
+          ) : (
+            <View style={styles.emptyStats}>
+              <Ionicons name="bar-chart-outline" size={48} color={theme.colors.textSecondary} />
+              <Text style={styles.emptyStatsText}>No data this week</Text>
+              <Text style={styles.emptyStatsSubtext}>Start tracking time to see your weekly statistics</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -81,10 +87,30 @@ const ReportsScreen = () => {
           <View style={styles.insightCard}>
             <Ionicons name="bulb-outline" size={24} color={theme.colors.warning} />
             <View style={styles.insightContent}>
-              <Text style={styles.insightTitle}>Great week!</Text>
-              <Text style={styles.insightText}>
-                You've been consistently productive this week. Your Tuesday sessions were particularly effective.
-              </Text>
+              {weeklyStats.totalSessions > 0 ? (
+                <>
+                  <Text style={styles.insightTitle}>
+                    {weeklyStats.totalHours >= 20 ? 'Great week!' : 
+                     weeklyStats.totalHours >= 10 ? 'Good progress!' : 
+                     'Keep it up!'}
+                  </Text>
+                  <Text style={styles.insightText}>
+                    {weeklyStats.totalHours >= 20 
+                      ? `You've been consistently productive this week with ${weeklyStats.totalHours} hours tracked. Your ${weeklyStats.mostProductiveDay} sessions were particularly effective.`
+                      : weeklyStats.totalHours >= 10
+                      ? `You've made good progress this week with ${weeklyStats.totalHours} hours tracked. Try to maintain this momentum!`
+                      : `You've started tracking your time with ${weeklyStats.totalHours} hours this week. Keep building this habit for better productivity insights.`
+                    }
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.insightTitle}>Start tracking!</Text>
+                  <Text style={styles.insightText}>
+                    Begin tracking your time to get personalized productivity insights and see your progress over time.
+                  </Text>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -216,6 +242,29 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular,
     color: theme.colors.textSecondary,
     lineHeight: 20,
+  },
+  emptyStats: {
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.cardLight,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    ...theme.shadows.sm,
+  },
+  emptyStatsText: {
+    fontSize: theme.fontSizes.base,
+    fontFamily: theme.fonts.medium,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  emptyStatsSubtext: {
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.regular,
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
   },
 });
 

@@ -1,17 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../styles/theme';
+import { useData } from '../context/DataContext';
 
 const ActivityHeatmap = () => {
+  const { getActivityHeatmapData } = useData();
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
-  // Sample data for heatmap - in real app, this would come from props or state
-  const heatmapData = [
-    [0, 0, 0.2, 0.4, 0.6, 0.2, 0],
-    [0.8, 1, 0.6, 0.4, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
-  ];
+  // Get real heatmap data from user sessions
+  const heatmapData = getActivityHeatmapData();
 
   const getIntensityColor = (intensity) => {
     if (intensity === 0) return theme.colors.gray200;
