@@ -6,13 +6,16 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 import { theme } from '../styles/theme';
+import { useAuth } from '../context/AuthContext';
 
 const HomeScreen = ({ navigation }) => {
+  const { user, signOut } = useAuth();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [time, setTime] = useState(0); // Time in seconds
   const [todayTotal, setTodayTotal] = useState(0); // Today's total in seconds
@@ -56,6 +59,24 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('Customization');
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => signOut(),
+        },
+      ]
+    );
+  };
+
   // Sample recent days data
   const recentDays = [
     { day: 'Yesterday', date: 'May 20, 2024', duration: 29700 }, // 8h 15m in seconds
@@ -68,13 +89,24 @@ const HomeScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>TidKoll</Text>
-          <TouchableOpacity 
-            style={styles.settingsButton}
-            onPress={handleSettingsPress}
-          >
-            <Ionicons name="settings-outline" size={24} color={theme.colors.textPrimary} />
-          </TouchableOpacity>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>TidKoll</Text>
+            <Text style={styles.welcomeText}>Welcome, {user?.name || 'User'}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={handleSettingsPress}
+            >
+              <Ionicons name="settings-outline" size={24} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={handleLogout}
+            >
+              <Ionicons name="log-out-outline" size={24} color={theme.colors.error} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Timer Display */}
@@ -140,14 +172,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
   },
+  headerLeft: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: theme.fontSizes.xl,
     fontFamily: theme.fonts.bold,
     color: theme.colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
   },
-  settingsButton: {
+  welcomeText: {
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.regular,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  iconButton: {
     padding: theme.spacing.sm,
     borderRadius: theme.borderRadius.full,
     backgroundColor: 'rgba(1, 152, 99, 0.1)',
