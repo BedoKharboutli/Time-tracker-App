@@ -43,7 +43,7 @@ const LoginScreen = ({ navigation }) => {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <Ionicons name="time-outline" size={32} color={theme.colors.primary} />
-            <Text style={styles.logoText}>Time Tracker</Text>
+            <Text style={styles.logoText}>TidKoll</Text>
           </View>
         </View>
 

@@ -68,7 +68,7 @@ const HomeScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Time Tracker</Text>
+          <Text style={styles.headerTitle}>TidKoll</Text>
           <TouchableOpacity 
             style={styles.settingsButton}
             onPress={handleSettingsPress}
