@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,43 +6,79 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import { theme } from '../styles/theme';
+import { useCustomization } from '../context/CustomizationContext';
 
 const CustomizationScreen = ({ navigation }) => {
-  const [selectedTimerStyle, setSelectedTimerStyle] = useState('classic');
-  const [selectedColorTheme, setSelectedColorTheme] = useState('white');
-  const [selectedFont, setSelectedFont] = useState('system');
+  const {
+    timerStyle,
+    themeMode,
+    font,
+    saveAllPreferences,
+    getCurrentTheme,
+    TIMER_STYLES,
+    THEME_MODES,
+    FONT_OPTIONS,
+  } = useCustomization();
 
-  const timerStyles = [
-    { id: 'classic', label: 'Classic' },
-    { id: 'modern', label: 'Modern' },
-    { id: 'minimalist', label: 'Minimalist' },
-  ];
+  const [selectedTimerStyle, setSelectedTimerStyle] = useState(timerStyle);
+  const [selectedThemeMode, setSelectedThemeMode] = useState(themeMode);
+  const [selectedFont, setSelectedFont] = useState(font);
 
-  const colorThemes = [
-    { id: 'white', color: '#ffffff', borderColor: '#e5e7eb' },
-    { id: 'cyan', color: '#e0f7fa', borderColor: '#e5e7eb' },
-    { id: 'orange', color: '#fff3e0', borderColor: '#e5e7eb' },
-    { id: 'pink', color: '#fce4ec', borderColor: '#e5e7eb' },
-  ];
+  // Update local state when context values change
+  useEffect(() => {
+    setSelectedTimerStyle(timerStyle);
+    setSelectedThemeMode(themeMode);
+    setSelectedFont(font);
+  }, [timerStyle, themeMode, font]);
 
-  const fontOptions = [
-    { id: 'system', label: 'System' },
-    { id: 'roboto', label: 'Roboto' },
-    { id: 'opensans', label: 'Open Sans' },
-  ];
+  // Convert context data to arrays for rendering
+  const timerStyles = Object.values(TIMER_STYLES).map(style => ({
+    id: style.id,
+    label: style.name,
+  }));
 
-  const handleSaveChanges = () => {
-    // Save preferences logic here
-    console.log('Saving preferences:', {
-      timerStyle: selectedTimerStyle,
-      colorTheme: selectedColorTheme,
-      font: selectedFont,
-    });
-    navigation.goBack();
+  const themeModes = Object.values(THEME_MODES).map(mode => ({
+    id: mode.id,
+    label: mode.name,
+  }));
+
+  const fontOptions = Object.values(FONT_OPTIONS).map(fontOption => ({
+    id: fontOption.id,
+    label: fontOption.name,
+  }));
+
+  const handleSaveChanges = async () => {
+    try {
+      const preferences = {
+        timerStyle: selectedTimerStyle,
+        themeMode: selectedThemeMode,
+        font: selectedFont,
+      };
+
+      await saveAllPreferences(preferences);
+      
+      Alert.alert(
+        'Success',
+        'Your customization preferences have been saved!',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Failed to save preferences. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const renderOptionButton = (option, selectedValue, onSelect, isSelected) => (
@@ -50,33 +86,35 @@ const CustomizationScreen = ({ navigation }) => {
       key={option.id}
       style={[
         styles.optionButton,
-        isSelected && styles.selectedOption,
+        { 
+          backgroundColor: currentTheme.colors.cardLight, 
+          borderColor: currentTheme.colors.borderLight 
+        },
+        isSelected && { 
+          borderColor: currentTheme.colors.primary,
+          borderWidth: 2,
+        },
       ]}
       onPress={() => onSelect(option.id)}
     >
       <Text style={[
         styles.optionText,
-        isSelected && styles.selectedOptionText,
+        { color: currentTheme.colors.textPrimary },
+        isSelected && { 
+          color: currentTheme.colors.primary,
+          fontFamily: theme.fonts.medium,
+        },
       ]}>
         {option.label}
       </Text>
     </TouchableOpacity>
   );
 
-  const renderColorOption = (color, isSelected, onSelect) => (
-    <TouchableOpacity
-      key={color.id}
-      style={[
-        styles.colorOption,
-        { backgroundColor: color.color, borderColor: color.borderColor },
-        isSelected && styles.selectedColorOption,
-      ]}
-      onPress={() => onSelect(color.id)}
-    />
-  );
+  // Get current theme for dynamic styling
+  const currentTheme = getCurrentTheme();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.colors.backgroundLight }]}>
       <Header
         title="Timer Design"
         showBackButton={true}
@@ -86,7 +124,7 @@ const CustomizationScreen = ({ navigation }) => {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Timer Style Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Timer Style</Text>
+          <Text style={[styles.sectionTitle, { color: currentTheme.colors.textPrimary }]}>Timer Style</Text>
           <View style={styles.optionsGrid}>
             {timerStyles.map(style => 
               renderOptionButton(
@@ -99,15 +137,16 @@ const CustomizationScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Color Theme Section */}
+        {/* Theme Mode Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Color Theme</Text>
-          <View style={styles.colorGrid}>
-            {colorThemes.map(color =>
-              renderColorOption(
-                color,
-                selectedColorTheme === color.id,
-                setSelectedColorTheme
+          <Text style={[styles.sectionTitle, { color: currentTheme.colors.textPrimary }]}>Theme Mode</Text>
+          <View style={styles.optionsGrid}>
+            {themeModes.map(mode =>
+              renderOptionButton(
+                mode,
+                selectedThemeMode,
+                setSelectedThemeMode,
+                selectedThemeMode === mode.id
               )
             )}
           </View>
@@ -115,7 +154,7 @@ const CustomizationScreen = ({ navigation }) => {
 
         {/* Font Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Font</Text>
+          <Text style={[styles.sectionTitle, { color: currentTheme.colors.textPrimary }]}>Font</Text>
           <View style={styles.optionsGrid}>
             {fontOptions.map(font =>
               renderOptionButton(
@@ -130,13 +169,13 @@ const CustomizationScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Save Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: currentTheme.colors.backgroundLight, borderTopColor: currentTheme.colors.borderLight }]}>
         <Button
           title="Save Changes"
           onPress={handleSaveChanges}
           variant="primary"
           size="large"
-          style={styles.saveButton}
+          style={[styles.saveButton, { backgroundColor: currentTheme.colors.primary }]}
         />
       </View>
     </SafeAreaView>
@@ -191,25 +230,6 @@ const styles = StyleSheet.create({
     color: '#137fec',
     fontFamily: theme.fonts.medium,
   },
-  colorGrid: {
-    flexDirection: 'row',
-    gap: theme.spacing.lg,
-  },
-  colorOption: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-  },
-  selectedColorOption: {
-    borderColor: '#137fec',
-    borderWidth: 2,
-    shadowColor: '#137fec',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
   footer: {
     padding: theme.spacing.md,
     backgroundColor: theme.colors.backgroundLight,
@@ -217,7 +237,7 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.borderLight,
   },
   saveButton: {
-    backgroundColor: '#FAC638', // Yellow color from original design
+    // Background color will be overridden by dynamic styling
   },
 });
 

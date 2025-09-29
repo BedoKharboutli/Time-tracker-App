@@ -9,35 +9,41 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { useData } from '../context/DataContext';
+import { useCustomization } from '../context/CustomizationContext';
 
 const ReportsScreen = () => {
   const { getWeeklyStats } = useData();
+  const { getCurrentTheme, getCurrentFont } = useCustomization();
   
   // Get real weekly statistics from user data
   const weeklyStats = getWeeklyStats();
+  
+  // Get current customization settings
+  const currentTheme = getCurrentTheme();
+  const currentFont = getCurrentFont();
 
   const StatCard = ({ icon, title, value, subtitle }) => (
-    <View style={styles.statCard}>
-      <View style={styles.statIcon}>
-        <Ionicons name={icon} size={24} color={theme.colors.primary} />
+    <View style={[styles.statCard, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
+      <View style={[styles.statIcon, { backgroundColor: `${currentTheme.colors.primary}1A` }]}>
+        <Ionicons name={icon} size={24} color={currentTheme.colors.primary} />
       </View>
       <View style={styles.statContent}>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statTitle}>{title}</Text>
-        {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+        <Text style={[styles.statValue, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>{value}</Text>
+        <Text style={[styles.statTitle, { fontFamily: currentFont.regular, color: currentTheme.colors.textSecondary }]}>{title}</Text>
+        {subtitle && <Text style={[styles.statSubtitle, { fontFamily: currentFont.regular, color: currentTheme.colors.textLight }]}>{subtitle}</Text>}
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.colors.backgroundLight }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Reports</Text>
+        <Text style={[styles.headerTitle, { fontFamily: currentFont.bold, color: currentTheme.colors.primary }]}>Reports</Text>
       </View>
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week</Text>
+          <Text style={[styles.sectionTitle, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>This Week</Text>
           {weeklyStats.totalSessions > 0 ? (
             <View style={styles.statsGrid}>
               <StatCard
@@ -62,39 +68,39 @@ const ReportsScreen = () => {
               />
             </View>
           ) : (
-            <View style={styles.emptyStats}>
-              <Ionicons name="bar-chart-outline" size={48} color={theme.colors.textSecondary} />
-              <Text style={styles.emptyStatsText}>No data this week</Text>
-              <Text style={styles.emptyStatsSubtext}>Start tracking time to see your weekly statistics</Text>
+            <View style={[styles.emptyStats, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
+              <Ionicons name="bar-chart-outline" size={48} color={currentTheme.colors.textSecondary} />
+              <Text style={[styles.emptyStatsText, { fontFamily: currentFont.medium, color: currentTheme.colors.textSecondary }]}>No data this week</Text>
+              <Text style={[styles.emptyStatsSubtext, { fontFamily: currentFont.regular, color: currentTheme.colors.textLight }]}>Start tracking time to see your weekly statistics</Text>
             </View>
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Weekly Breakdown</Text>
-          <View style={styles.weeklyChart}>
-            <Text style={styles.chartPlaceholder}>
+          <Text style={[styles.sectionTitle, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>Weekly Breakdown</Text>
+          <View style={[styles.weeklyChart, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
+            <Text style={[styles.chartPlaceholder, { fontFamily: currentFont.regular }]}>
               📊 Weekly chart would go here
             </Text>
-            <Text style={styles.chartDescription}>
+            <Text style={[styles.chartDescription, { fontFamily: currentFont.regular, color: currentTheme.colors.textSecondary }]}>
               Visual representation of daily work hours
             </Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Productivity Insights</Text>
-          <View style={styles.insightCard}>
-            <Ionicons name="bulb-outline" size={24} color={theme.colors.warning} />
+          <Text style={[styles.sectionTitle, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>Productivity Insights</Text>
+          <View style={[styles.insightCard, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
+            <Ionicons name="bulb-outline" size={24} color={currentTheme.colors.warning} />
             <View style={styles.insightContent}>
               {weeklyStats.totalSessions > 0 ? (
                 <>
-                  <Text style={styles.insightTitle}>
+                  <Text style={[styles.insightTitle, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>
                     {weeklyStats.totalHours >= 20 ? 'Great week!' : 
                      weeklyStats.totalHours >= 10 ? 'Good progress!' : 
                      'Keep it up!'}
                   </Text>
-                  <Text style={styles.insightText}>
+                  <Text style={[styles.insightText, { fontFamily: currentFont.regular, color: currentTheme.colors.textSecondary }]}>
                     {weeklyStats.totalHours >= 20 
                       ? `You've been consistently productive this week with ${weeklyStats.totalHours} hours tracked. Your ${weeklyStats.mostProductiveDay} sessions were particularly effective.`
                       : weeklyStats.totalHours >= 10
@@ -105,8 +111,8 @@ const ReportsScreen = () => {
                 </>
               ) : (
                 <>
-                  <Text style={styles.insightTitle}>Start tracking!</Text>
-                  <Text style={styles.insightText}>
+                  <Text style={[styles.insightTitle, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>Start tracking!</Text>
+                  <Text style={[styles.insightText, { fontFamily: currentFont.regular, color: currentTheme.colors.textSecondary }]}>
                     Begin tracking your time to get personalized productivity insights and see your progress over time.
                   </Text>
                 </>

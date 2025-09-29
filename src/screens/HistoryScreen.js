@@ -11,12 +11,18 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import { theme } from '../styles/theme';
 import { useData } from '../context/DataContext';
+import { useCustomization } from '../context/CustomizationContext';
 
 const HistoryScreen = ({ navigation }) => {
   const { getSessionsGroupedByDate } = useData();
+  const { getCurrentTheme, getCurrentFont } = useCustomization();
   
   // Get real session data grouped by date
   const sessionGroups = getSessionsGroupedByDate();
+  
+  // Get current customization settings
+  const currentTheme = getCurrentTheme();
+  const currentFont = getCurrentFont();
 
   const formatDuration = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -57,15 +63,15 @@ const HistoryScreen = ({ navigation }) => {
   };
 
   const renderSessionItem = (session, index) => (
-    <View key={index} style={styles.sessionItem}>
-      <View style={styles.sessionIcon}>
-        <Ionicons name="time" size={24} color={theme.colors.primary} />
+    <View key={index} style={[styles.sessionItem, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
+      <View style={[styles.sessionIcon, { backgroundColor: `${currentTheme.colors.primary}1A` }]}>
+        <Ionicons name="time" size={24} color={currentTheme.colors.primary} />
       </View>
       <View style={styles.sessionContent}>
-        <Text style={styles.sessionDuration}>
+        <Text style={[styles.sessionDuration, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>
           {formatDuration(session.duration)}
         </Text>
-        <Text style={styles.sessionTime}>
+        <Text style={[styles.sessionTime, { fontFamily: currentFont.regular, color: currentTheme.colors.textSecondary }]}>
           {formatTime(session.startTime)} - {formatTime(session.endTime)}
         </Text>
       </View>
@@ -74,7 +80,7 @@ const HistoryScreen = ({ navigation }) => {
 
   const renderDaySection = (dateGroup) => (
     <View key={dateGroup.date} style={styles.daySection}>
-      <Text style={styles.dayTitle}>{formatDateLabel(dateGroup.date)}</Text>
+      <Text style={[styles.dayTitle, { fontFamily: currentFont.bold, color: currentTheme.colors.textPrimary }]}>{formatDateLabel(dateGroup.date)}</Text>
       <View style={styles.sessionsList}>
         {dateGroup.sessions.map((session, index) => renderSessionItem(session, index))}
       </View>
@@ -82,7 +88,7 @@ const HistoryScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.colors.backgroundLight }]}>
       <Header
         title="History"
         showBackButton={true}
@@ -94,9 +100,9 @@ const HistoryScreen = ({ navigation }) => {
           sessionGroups.map(dateGroup => renderDaySection(dateGroup))
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons name="time-outline" size={64} color={theme.colors.textSecondary} />
-            <Text style={styles.emptyStateText}>No session history</Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Ionicons name="time-outline" size={64} color={currentTheme.colors.textSecondary} />
+            <Text style={[styles.emptyStateText, { fontFamily: currentFont.medium, color: currentTheme.colors.textSecondary }]}>No session history</Text>
+            <Text style={[styles.emptyStateSubtext, { fontFamily: currentFont.regular, color: currentTheme.colors.textLight }]}>
               Start tracking your time to see your session history here
             </Text>
           </View>

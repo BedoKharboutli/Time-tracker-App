@@ -2,31 +2,37 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../styles/theme';
 import { useData } from '../context/DataContext';
+import { useCustomization } from '../context/CustomizationContext';
 
 const ActivityHeatmap = () => {
   const { getActivityHeatmapData } = useData();
+  const { getCurrentTheme, getCurrentFont } = useCustomization();
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
   // Get real heatmap data from user sessions
   const heatmapData = getActivityHeatmapData();
+  
+  // Get current customization settings
+  const currentTheme = getCurrentTheme();
+  const currentFont = getCurrentFont();
 
   const getIntensityColor = (intensity) => {
     if (intensity === 0) return theme.colors.gray200;
-    if (intensity <= 0.2) return `${theme.colors.primary}33`; // 20% opacity
-    if (intensity <= 0.4) return `${theme.colors.primary}66`; // 40% opacity
-    if (intensity <= 0.6) return `${theme.colors.primary}99`; // 60% opacity
-    if (intensity <= 0.8) return `${theme.colors.primary}CC`; // 80% opacity
-    return theme.colors.primary; // 100% opacity
+    if (intensity <= 0.2) return `${currentTheme.colors.primary}33`; // 20% opacity
+    if (intensity <= 0.4) return `${currentTheme.colors.primary}66`; // 40% opacity
+    if (intensity <= 0.6) return `${currentTheme.colors.primary}99`; // 60% opacity
+    if (intensity <= 0.8) return `${currentTheme.colors.primary}CC`; // 80% opacity
+    return currentTheme.colors.primary; // 100% opacity
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Activity Heatmap</Text>
-      <View style={styles.heatmapContainer}>
+      <Text style={[styles.title, { fontFamily: currentFont.medium, color: currentTheme.colors.primary }]}>Activity Heatmap</Text>
+      <View style={[styles.heatmapContainer, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
         {/* Days of week header */}
         <View style={styles.daysHeader}>
           {daysOfWeek.map((day, index) => (
-            <Text key={index} style={styles.dayText}>
+            <Text key={index} style={[styles.dayText, { fontFamily: currentFont.regular }]}>
               {day}
             </Text>
           ))}

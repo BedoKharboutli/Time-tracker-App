@@ -14,14 +14,21 @@ import ActivityHeatmap from '../components/ActivityHeatmap';
 import { theme } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useCustomization } from '../context/CustomizationContext';
 
 const HomeScreen = ({ navigation }) => {
   const { user, signOut } = useAuth();
   const { addSession, getTodayTotalDuration, getSessionsGroupedByDate } = useData();
+  const { getCurrentTheme, getCurrentTimerStyle, getCurrentFont } = useCustomization();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [time, setTime] = useState(0); // Time in seconds
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [todayTotal, setTodayTotal] = useState(0); // Today's total in seconds
+
+  // Get current customization settings
+  const currentTheme = getCurrentTheme();
+  const currentTimerStyle = getCurrentTimerStyle();
+  const currentFont = getCurrentFont();
 
   // Load today's total when component mounts or data changes
   useEffect(() => {
@@ -151,35 +158,40 @@ const HomeScreen = ({ navigation }) => {
 
   const recentDays = getRecentDays();
 
+  // Create dynamic styles based on current theme and customization
+  const dynamicStyles = createDynamicStyles(currentTheme, currentTimerStyle, currentFont);
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.colors.backgroundLight }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>TidKoll</Text>
-            <Text style={styles.welcomeText}>Welcome, {user?.name || 'User'}</Text>
+            <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>TidKoll</Text>
+            <Text style={[styles.welcomeText, dynamicStyles.welcomeText]}>Welcome, {user?.name || 'User'}</Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity 
-              style={styles.iconButton}
+              style={[styles.iconButton, { backgroundColor: `${currentTheme.colors.primary}1A` }]}
               onPress={handleSettingsPress}
             >
-              <Ionicons name="settings-outline" size={24} color={theme.colors.textPrimary} />
+              <Ionicons name="settings-outline" size={24} color={currentTheme.colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.iconButton}
+              style={[styles.iconButton, { backgroundColor: `${currentTheme.colors.error}1A` }]}
               onPress={handleLogout}
             >
-              <Ionicons name="log-out-outline" size={24} color={theme.colors.error} />
+              <Ionicons name="log-out-outline" size={24} color={currentTheme.colors.error} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Timer Display */}
         <View style={styles.timerSection}>
-          <Text style={styles.timerDisplay}>{formatTime(time)}</Text>
-          <Text style={styles.todayTotal}>
+          <Text style={[styles.timerDisplay, dynamicStyles.timerDisplay]}>
+            {formatTime(time)}
+          </Text>
+          <Text style={[styles.todayTotal, dynamicStyles.todayTotal]}>
             Today's total: {formatDuration(todayTotal + time)}
           </Text>
         </View>
@@ -203,25 +215,25 @@ const HomeScreen = ({ navigation }) => {
 
         {/* Recent Days */}
         <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>Recent Days</Text>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Recent Days</Text>
           <View style={styles.recentList}>
             {recentDays.length > 0 ? (
               recentDays.map((item, index) => (
-                <View key={index} style={styles.recentItem}>
+                <View key={index} style={[styles.recentItem, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
                   <View style={styles.recentItemLeft}>
-                    <Text style={styles.recentDay}>{item.day}</Text>
-                    <Text style={styles.recentDate}>{item.date}</Text>
+                    <Text style={[styles.recentDay, dynamicStyles.recentDay]}>{item.day}</Text>
+                    <Text style={[styles.recentDate, dynamicStyles.recentDate]}>{item.date}</Text>
                   </View>
-                  <Text style={styles.recentDuration}>
+                  <Text style={[styles.recentDuration, dynamicStyles.recentDuration]}>
                     {formatDuration(item.duration)}
                   </Text>
                 </View>
               ))
             ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="time-outline" size={48} color={theme.colors.textSecondary} />
-                <Text style={styles.emptyStateText}>No recent activity</Text>
-                <Text style={styles.emptyStateSubtext}>Start your first timer session!</Text>
+              <View style={[styles.emptyState, { backgroundColor: currentTheme.colors.cardLight, borderColor: currentTheme.colors.borderLight }]}>
+                <Ionicons name="time-outline" size={48} color={currentTheme.colors.textSecondary} />
+                <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No recent activity</Text>
+                <Text style={[styles.emptyStateSubtext, dynamicStyles.emptyStateSubtext]}>Start your first timer session!</Text>
               </View>
             )}
           </View>
@@ -229,6 +241,54 @@ const HomeScreen = ({ navigation }) => {
       </ScrollView>
     </SafeAreaView>
   );
+};
+
+// Dynamic styles function
+const createDynamicStyles = (currentTheme, currentTimerStyle, currentFont) => {
+  return StyleSheet.create({
+    timerDisplay: {
+      fontSize: theme.fontSizes[currentTimerStyle.fontSize] || theme.fontSizes['7xl'],
+      fontFamily: currentFont[currentTimerStyle.fontWeight] || currentFont.bold,
+      letterSpacing: currentTimerStyle.letterSpacing,
+      color: currentTheme.colors.primary,
+    },
+    todayTotal: {
+      fontFamily: currentFont.regular,
+      color: currentTheme.colors.primary,
+    },
+    headerTitle: {
+      fontFamily: currentFont.bold,
+      color: currentTheme.colors.primary,
+    },
+    welcomeText: {
+      fontFamily: currentFont.regular,
+      color: currentTheme.colors.textSecondary,
+    },
+    sectionTitle: {
+      fontFamily: currentFont.medium,
+      color: currentTheme.colors.textPrimary,
+    },
+    recentDay: {
+      fontFamily: currentFont.medium,
+      color: currentTheme.colors.textPrimary,
+    },
+    recentDate: {
+      fontFamily: currentFont.regular,
+      color: currentTheme.colors.textSecondary,
+    },
+    recentDuration: {
+      fontFamily: currentFont.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    emptyStateText: {
+      fontFamily: currentFont.medium,
+      color: currentTheme.colors.textSecondary,
+    },
+    emptyStateSubtext: {
+      fontFamily: currentFont.regular,
+      color: currentTheme.colors.textLight,
+    },
+  });
 };
 
 const styles = StyleSheet.create({
