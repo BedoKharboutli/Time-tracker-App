@@ -10,25 +10,50 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import { theme } from '../styles/theme';
+import { useData } from '../context/DataContext';
 
 const HistoryScreen = ({ navigation }) => {
-  // Sample history data
-  const historyData = {
-    today: [
-      { duration: 7200, startTime: '10:00 AM', endTime: '12:00 PM' }, // 2h 0m
-      { duration: 3600, startTime: '8:00 AM', endTime: '9:00 AM' },   // 1h 0m
-    ],
-    yesterday: [
-      { duration: 7200, startTime: '2:00 PM', endTime: '4:00 PM' },   // 2h 0m
-      { duration: 7200, startTime: '10:00 AM', endTime: '12:00 PM' }, // 2h 0m
-      { duration: 3600, startTime: '8:00 AM', endTime: '9:00 AM' },   // 1h 0m
-    ],
-  };
+  const { getSessionsGroupedByDate } = useData();
+  
+  // Get real session data grouped by date
+  const sessionGroups = getSessionsGroupedByDate();
 
   const formatDuration = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const formatDateLabel = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    const dateOnly = date.toISOString().split('T')[0];
+    const todayOnly = today.toISOString().split('T')[0];
+    const yesterdayOnly = yesterday.toISOString().split('T')[0];
+    
+    if (dateOnly === todayOnly) {
+      return 'Today';
+    } else if (dateOnly === yesterdayOnly) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
   };
 
   const renderSessionItem = (session, index) => (
@@ -41,17 +66,17 @@ const HistoryScreen = ({ navigation }) => {
           {formatDuration(session.duration)}
         </Text>
         <Text style={styles.sessionTime}>
-          {session.startTime} - {session.endTime}
+          {formatTime(session.startTime)} - {formatTime(session.endTime)}
         </Text>
       </View>
     </View>
   );
 
-  const renderDaySection = (title, sessions) => (
-    <View style={styles.daySection}>
-      <Text style={styles.dayTitle}>{title}</Text>
+  const renderDaySection = (dateGroup) => (
+    <View key={dateGroup.date} style={styles.daySection}>
+      <Text style={styles.dayTitle}>{formatDateLabel(dateGroup.date)}</Text>
       <View style={styles.sessionsList}>
-        {sessions.map((session, index) => renderSessionItem(session, index))}
+        {dateGroup.sessions.map((session, index) => renderSessionItem(session, index))}
       </View>
     </View>
   );
@@ -65,8 +90,17 @@ const HistoryScreen = ({ navigation }) => {
       />
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {renderDaySection('Today', historyData.today)}
-        {renderDaySection('Yesterday', historyData.yesterday)}
+        {sessionGroups.length > 0 ? (
+          sessionGroups.map(dateGroup => renderDaySection(dateGroup))
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="time-outline" size={64} color={theme.colors.textSecondary} />
+            <Text style={styles.emptyStateText}>No session history</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Start tracking your time to see your session history here
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -129,6 +163,27 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular,
     color: theme.colors.textSecondary,
     marginTop: 2,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.xl,
+    marginTop: theme.spacing.xl,
+  },
+  emptyStateText: {
+    fontSize: theme.fontSizes.lg,
+    fontFamily: theme.fonts.medium,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.md,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: theme.fontSizes.sm,
+    fontFamily: theme.fonts.regular,
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.sm,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 
