@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from './AuthContext';
 
 const CustomizationContext = createContext();
 
@@ -158,33 +157,23 @@ const customizationReducer = (state, action) => {
   }
 };
 
-// Storage key generator
-const getUserCustomizationKey = (userId) => `@user_customization_${userId}`;
+// Storage key for app customization
+const APP_CUSTOMIZATION_KEY = '@app_customization';
 
 export const CustomizationProvider = ({ children }) => {
   const [state, dispatch] = useReducer(customizationReducer, initialState);
-  const { user } = useAuth();
 
-  // Load user customization when user changes
+  // Load app customization when component mounts
   useEffect(() => {
-    if (user?.id) {
-      loadUserCustomization(user.id);
-    } else {
-      // Reset to defaults when user logs out
-      dispatch({
-        type: CUSTOMIZATION_ACTIONS.LOAD_PREFERENCES,
-        payload: initialState,
-      });
-    }
-  }, [user?.id]);
+    loadAppCustomization();
+  }, []);
 
-  // Load user customization from AsyncStorage
-  const loadUserCustomization = async (userId) => {
+  // Load app customization from AsyncStorage
+  const loadAppCustomization = async () => {
     try {
       dispatch({ type: CUSTOMIZATION_ACTIONS.SET_LOADING, payload: true });
       
-      const customizationKey = getUserCustomizationKey(userId);
-      const customizationData = await AsyncStorage.getItem(customizationKey);
+      const customizationData = await AsyncStorage.getItem(APP_CUSTOMIZATION_KEY);
       
       if (customizationData) {
         const parsedData = JSON.parse(customizationData);
@@ -193,14 +182,14 @@ export const CustomizationProvider = ({ children }) => {
           payload: parsedData,
         });
       } else {
-        // Initialize with defaults for new user
+        // Initialize with defaults for first time use
         dispatch({
           type: CUSTOMIZATION_ACTIONS.LOAD_PREFERENCES,
           payload: initialState,
         });
       }
     } catch (error) {
-      console.error('Error loading user customization:', error);
+      console.error('Error loading app customization:', error);
       dispatch({
         type: CUSTOMIZATION_ACTIONS.LOAD_PREFERENCES,
         payload: initialState,
@@ -208,21 +197,18 @@ export const CustomizationProvider = ({ children }) => {
     }
   };
 
-  // Save user customization to AsyncStorage
-  const saveUserCustomization = async (userId, customizationData) => {
+  // Save app customization to AsyncStorage
+  const saveAppCustomization = async (customizationData) => {
     try {
-      const customizationKey = getUserCustomizationKey(userId);
-      await AsyncStorage.setItem(customizationKey, JSON.stringify(customizationData));
+      await AsyncStorage.setItem(APP_CUSTOMIZATION_KEY, JSON.stringify(customizationData));
     } catch (error) {
-      console.error('Error saving user customization:', error);
+      console.error('Error saving app customization:', error);
       throw error;
     }
   };
 
   // Set timer style
   const setTimerStyle = async (style) => {
-    if (!user?.id) return;
-
     try {
       dispatch({
         type: CUSTOMIZATION_ACTIONS.SET_TIMER_STYLE,
@@ -230,7 +216,7 @@ export const CustomizationProvider = ({ children }) => {
       });
 
       const updatedState = { ...state, timerStyle: style };
-      await saveUserCustomization(user.id, updatedState);
+      await saveAppCustomization(updatedState);
     } catch (error) {
       console.error('Error setting timer style:', error);
     }
@@ -238,8 +224,6 @@ export const CustomizationProvider = ({ children }) => {
 
   // Set theme mode
   const setThemeMode = async (mode) => {
-    if (!user?.id) return;
-
     try {
       dispatch({
         type: CUSTOMIZATION_ACTIONS.SET_THEME_MODE,
@@ -247,7 +231,7 @@ export const CustomizationProvider = ({ children }) => {
       });
 
       const updatedState = { ...state, themeMode: mode };
-      await saveUserCustomization(user.id, updatedState);
+      await saveAppCustomization(updatedState);
     } catch (error) {
       console.error('Error setting theme mode:', error);
     }
@@ -255,8 +239,6 @@ export const CustomizationProvider = ({ children }) => {
 
   // Set font
   const setFont = async (font) => {
-    if (!user?.id) return;
-
     try {
       dispatch({
         type: CUSTOMIZATION_ACTIONS.SET_FONT,
@@ -264,7 +246,7 @@ export const CustomizationProvider = ({ children }) => {
       });
 
       const updatedState = { ...state, font: font };
-      await saveUserCustomization(user.id, updatedState);
+      await saveAppCustomization(updatedState);
     } catch (error) {
       console.error('Error setting font:', error);
     }
@@ -287,15 +269,13 @@ export const CustomizationProvider = ({ children }) => {
 
   // Save all preferences at once
   const saveAllPreferences = async (preferences) => {
-    if (!user?.id) return;
-
     try {
       dispatch({
         type: CUSTOMIZATION_ACTIONS.LOAD_PREFERENCES,
         payload: preferences,
       });
 
-      await saveUserCustomization(user.id, preferences);
+      await saveAppCustomization(preferences);
     } catch (error) {
       console.error('Error saving all preferences:', error);
       throw error;

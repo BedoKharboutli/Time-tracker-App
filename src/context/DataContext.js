@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
 
@@ -66,77 +65,61 @@ const dataReducer = (state, action) => {
   }
 };
 
-// Storage key generator
-const getUserDataKey = (userId) => `@user_data_${userId}`;
+// Storage key for app data
+const APP_DATA_KEY = '@app_data';
 
 export const DataProvider = ({ children }) => {
   const [state, dispatch] = useReducer(dataReducer, initialState);
-  const { user } = useAuth();
 
-  // Load user data when user changes
+  // Load app data when component mounts
   useEffect(() => {
-    if (user?.id) {
-      loadUserData(user.id);
-    } else {
-      // Clear data when user logs out
-      dispatch({
-        type: DATA_ACTIONS.LOAD_DATA,
-        payload: { sessions: [] },
-      });
-    }
-  }, [user?.id]);
+    loadAppData();
+  }, []);
 
-  // Load user data from AsyncStorage
-  const loadUserData = async (userId) => {
+  // Load app data from AsyncStorage
+  const loadAppData = async () => {
     try {
       dispatch({ type: DATA_ACTIONS.SET_LOADING, payload: true });
       
-      const dataKey = getUserDataKey(userId);
-      const userData = await AsyncStorage.getItem(dataKey);
+      const appData = await AsyncStorage.getItem(APP_DATA_KEY);
       
-      if (userData) {
-        const parsedData = JSON.parse(userData);
+      if (appData) {
+        const parsedData = JSON.parse(appData);
         dispatch({
           type: DATA_ACTIONS.LOAD_DATA,
           payload: { sessions: parsedData.sessions || [] },
         });
       } else {
-        // Initialize empty data for new user
+        // Initialize empty data for first time use
         dispatch({
           type: DATA_ACTIONS.LOAD_DATA,
           payload: { sessions: [] },
         });
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('Error loading app data:', error);
       dispatch({
         type: DATA_ACTIONS.SET_ERROR,
-        payload: 'Failed to load user data',
+        payload: 'Failed to load app data',
       });
     }
   };
 
-  // Save user data to AsyncStorage
-  const saveUserData = async (userId, data) => {
+  // Save app data to AsyncStorage
+  const saveAppData = async (data) => {
     try {
-      const dataKey = getUserDataKey(userId);
-      await AsyncStorage.setItem(dataKey, JSON.stringify(data));
+      await AsyncStorage.setItem(APP_DATA_KEY, JSON.stringify(data));
     } catch (error) {
-      console.error('Error saving user data:', error);
+      console.error('Error saving app data:', error);
       throw error;
     }
   };
 
   // Add a new timer session
   const addSession = async (sessionData) => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     try {
       const newSession = {
         id: Date.now().toString(),
-        userId: user.id,
         startTime: sessionData.startTime,
         endTime: sessionData.endTime,
         duration: sessionData.duration,
@@ -151,7 +134,7 @@ export const DataProvider = ({ children }) => {
 
       // Save to storage
       const updatedSessions = [...state.sessions, newSession];
-      await saveUserData(user.id, { sessions: updatedSessions });
+      await saveAppData({ sessions: updatedSessions });
 
       return newSession;
     } catch (error) {
@@ -166,10 +149,6 @@ export const DataProvider = ({ children }) => {
 
   // Update an existing session
   const updateSession = async (sessionId, updates) => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     try {
       dispatch({
         type: DATA_ACTIONS.UPDATE_SESSION,
@@ -180,7 +159,7 @@ export const DataProvider = ({ children }) => {
       const updatedSessions = state.sessions.map(session =>
         session.id === sessionId ? { ...session, ...updates } : session
       );
-      await saveUserData(user.id, { sessions: updatedSessions });
+      await saveAppData({ sessions: updatedSessions });
     } catch (error) {
       console.error('Error updating session:', error);
       dispatch({
@@ -193,10 +172,6 @@ export const DataProvider = ({ children }) => {
 
   // Delete a session
   const deleteSession = async (sessionId) => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     try {
       dispatch({
         type: DATA_ACTIONS.DELETE_SESSION,
@@ -205,7 +180,7 @@ export const DataProvider = ({ children }) => {
 
       // Save to storage
       const updatedSessions = state.sessions.filter(session => session.id !== sessionId);
-      await saveUserData(user.id, { sessions: updatedSessions });
+      await saveAppData({ sessions: updatedSessions });
     } catch (error) {
       console.error('Error deleting session:', error);
       dispatch({

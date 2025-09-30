@@ -1,46 +1,66 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { DataProvider } from './src/context/DataContext';
 import { CustomizationProvider } from './src/context/CustomizationContext';
-import LoginScreen from './src/screens/LoginScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
 import CustomizationScreen from './src/screens/CustomizationScreen';
-import { theme } from './src/styles/theme';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
-  const { isLoading, isAuthenticated } = useAuth();
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if user has seen welcome screen before
+  useEffect(() => {
+    const checkWelcomeStatus = async () => {
+      try {
+        const welcomeStatus = await AsyncStorage.getItem('@has_seen_welcome');
+        if (welcomeStatus === 'true') {
+          setHasSeenWelcome(true);
+        }
+      } catch (error) {
+        console.error('Error checking welcome status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkWelcomeStatus();
+  }, []);
+
+  const handleStartTimer = async () => {
+    try {
+      await AsyncStorage.setItem('@has_seen_welcome', 'true');
+      setHasSeenWelcome(true);
+    } catch (error) {
+      console.error('Error saving welcome status:', error);
+      setHasSeenWelcome(true); // Continue anyway
+    }
+  };
 
   if (isLoading) {
-    return (
-      <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        backgroundColor: theme.colors.backgroundLight 
-      }}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
+    return null; // Or a loading screen
   }
 
   return (
     <Stack.Navigator 
       screenOptions={{ headerShown: false }}
     >
-      {isAuthenticated ? (
+      {hasSeenWelcome ? (
         <>
           <Stack.Screen name="Main" component={MainTabNavigator} />
           <Stack.Screen name="Customization" component={CustomizationScreen} />
         </>
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Welcome">
+          {() => <WelcomeScreen onStartTimer={handleStartTimer} />}
+        </Stack.Screen>
       )}
     </Stack.Navigator>
   );
@@ -48,15 +68,13 @@ const AppNavigator = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <CustomizationProvider>
-          <NavigationContainer>
-            <StatusBar style="auto" />
-            <AppNavigator />
-          </NavigationContainer>
-        </CustomizationProvider>
-      </DataProvider>
-    </AuthProvider>
+    <DataProvider>
+      <CustomizationProvider>
+        <NavigationContainer>
+          <StatusBar style="auto" />
+          <AppNavigator />
+        </NavigationContainer>
+      </CustomizationProvider>
+    </DataProvider>
   );
 }
