@@ -12,12 +12,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 import { theme } from '../styles/theme';
-import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useCustomization } from '../context/CustomizationContext';
 
 const HomeScreen = ({ navigation }) => {
-  const { user, signOut } = useAuth();
   const { addSession, getTodayTotalDuration, getSessionsGroupedByDate } = useData();
   const { getCurrentTheme, getCurrentTimerStyle, getCurrentFont } = useCustomization();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -99,23 +97,6 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('Customization');
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => signOut(),
-        },
-      ]
-    );
-  };
 
   // Get recent days data from real sessions
   const getRecentDays = () => {
@@ -168,20 +149,14 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>TidKoll</Text>
-            <Text style={[styles.welcomeText, dynamicStyles.welcomeText]}>Welcome, {user?.name || 'User'}</Text>
+            <Text style={[styles.welcomeText, dynamicStyles.welcomeText]}>Track your time efficiently</Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity 
-              style={[styles.iconButton, { backgroundColor: `${currentTheme.colors.primary}1A` }]}
+              style={styles.iconButtonNoBg}
               onPress={handleSettingsPress}
             >
               <Ionicons name="settings-outline" size={24} color={currentTheme.colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.iconButton, { backgroundColor: `${currentTheme.colors.error}1A` }]}
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out-outline" size={24} color={currentTheme.colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -330,6 +305,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.sm,
     borderRadius: theme.borderRadius.full,
     backgroundColor: 'rgba(1, 152, 99, 0.1)',
+  },
+  iconButtonNoBg: {
+    padding: theme.spacing.sm,
   },
   timerSection: {
     alignItems: 'center',
