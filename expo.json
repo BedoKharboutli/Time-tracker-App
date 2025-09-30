@@ -4,6 +4,12 @@
     "slug": "tidkoll-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
       "**/*"
@@ -13,7 +19,8 @@
       "bundleIdentifier": "com.tidkoll.app"
     },
     "android": {
-      "package": "com.tidkoll.app"
+      "package": "com.tidkoll.app",
+      "icon": "./assets/icon.png"
     },
     "web": {
       "bundler": "metro"
