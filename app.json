@@ -1,5 +1,20 @@
 {
   "plugins": [
     "expo-font"
-  ]
+  ],
+  "extra": {
+    "eas": {
+      "projectId": "2359f9d7-2666-4eb0-909a-6d45b57c21ce"
+    }
+  },
+  "expo": {
+    "ios": {
+      "bundleIdentifier": "com.tidkoll"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2359f9d7-2666-4eb0-909a-6d45b57c21ce"
+      }
+    }
+  }
 }
