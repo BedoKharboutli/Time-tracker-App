@@ -156,7 +156,7 @@ const HomeScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>TidKoll</Text>
+            <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>Clocked</Text>
             <Text style={[styles.welcomeText, dynamicStyles.welcomeText]}>Track your time efficiently</Text>
           </View>
           <View style={styles.headerRight}>

@@ -1,4 +1,4 @@
-# TidKoll React Native App
+# Clocked React Native App
 
 A beautiful and functional time tracking mobile application built with React Native and Expo, converted from Stitch design files.
 

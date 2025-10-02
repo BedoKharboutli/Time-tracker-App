@@ -27,7 +27,7 @@ const WelcomeScreen = ({ onStartTimer }) => {
             <View style={styles.logoCircle}>
               <Ionicons name="time" size={48} color={theme.colors.white} />
             </View>
-            <Text style={styles.logoText}>TidKoll</Text>
+            <Text style={styles.logoText}>Clocked</Text>
           </View>
         </View>
 
