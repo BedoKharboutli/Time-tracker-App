@@ -73,7 +73,9 @@ const HomeScreen = ({ navigation }) => {
           startTime: sessionStartTime.toISOString(),
           endTime: endTime.toISOString(),
           duration: time,
-          date: new Date().toISOString().split('T')[0],
+          date: sessionStartTime.getFullYear() + '-' + 
+                String(sessionStartTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(sessionStartTime.getDate()).padStart(2, '0'), // Use local timezone date
         };
 
         await addSession(sessionData);
@@ -101,11 +103,14 @@ const HomeScreen = ({ navigation }) => {
   // Get recent days data from real sessions
   const getRecentDays = () => {
     const groupedSessions = getSessionsGroupedByDate();
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayString = today.getFullYear() + '-' + 
+                       String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(today.getDate()).padStart(2, '0');
     
     // Filter out today and get last 3 days with data
     const recentDays = groupedSessions
-      .filter(group => group.date !== today)
+      .filter(group => group.date !== todayString)
       .slice(0, 3)
       .map(group => {
         const date = new Date(group.date);
@@ -117,7 +122,10 @@ const HomeScreen = ({ navigation }) => {
         yesterday.setDate(today.getDate() - 1);
         
         let dayLabel;
-        if (group.date === yesterday.toISOString().split('T')[0]) {
+        const yesterdayString = yesterday.getFullYear() + '-' + 
+                               String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(yesterday.getDate()).padStart(2, '0');
+        if (group.date === yesterdayString) {
           dayLabel = 'Yesterday';
         } else {
           dayLabel = date.toLocaleDateString('en-US', { weekday: 'long' });

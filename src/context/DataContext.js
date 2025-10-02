@@ -1,6 +1,20 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Helper function to get local date string (YYYY-MM-DD) without timezone conversion
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to create a date from local date string
+const createLocalDate = (dateString) => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 const DataContext = createContext();
 
 // Data actions
@@ -123,7 +137,7 @@ export const DataProvider = ({ children }) => {
         startTime: sessionData.startTime,
         endTime: sessionData.endTime,
         duration: sessionData.duration,
-        date: sessionData.date || new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+        date: sessionData.date || getLocalDateString(), // YYYY-MM-DD format using local timezone
         createdAt: new Date().toISOString(),
       };
 
@@ -198,7 +212,7 @@ export const DataProvider = ({ children }) => {
 
   // Get sessions for today
   const getTodaySessions = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     return getSessionsByDate(today);
   };
 
@@ -210,7 +224,7 @@ export const DataProvider = ({ children }) => {
 
   // Get total duration for today
   const getTodayTotalDuration = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     return getTotalDurationForDate(today);
   };
 
@@ -236,16 +250,15 @@ export const DataProvider = ({ children }) => {
   // Get weekly stats for reports
   const getWeeklyStats = () => {
     const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
-    weekStart.setHours(0, 0, 0, 0);
-
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6); // End of current week (Saturday)
-    weekEnd.setHours(23, 59, 59, 999);
+    
+    // Start of current week (Monday) using local timezone
+    const dayOfWeek = now.getDay();
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days, else go back (dayOfWeek - 1) days
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysFromMonday);
+    const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysFromMonday + 6);
 
     const weekSessions = state.sessions.filter(session => {
-      const sessionDate = new Date(session.date);
+      const sessionDate = createLocalDate(session.date);
       return sessionDate >= weekStart && sessionDate <= weekEnd;
     });
 
@@ -287,18 +300,29 @@ export const DataProvider = ({ children }) => {
     const daysPerWeek = 7;
     const heatmapData = [];
 
-    const now = new Date();
-    const startDate = new Date(now);
-    startDate.setDate(now.getDate() - (weeks * daysPerWeek - 1));
-    startDate.setHours(0, 0, 0, 0);
+    // Get today's date in local timezone
+    const today = new Date();
+    
+    // Find the Monday of the current week using local dates
+    const todayDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const daysFromMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
+    
+    // Create Monday of current week using local date components
+    const thisWeekMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysFromMonday);
+    
+    // Calculate start date: go back (weeks - 1) full weeks from this Monday
+    const startDate = new Date(thisWeekMonday.getFullYear(), thisWeekMonday.getMonth(), thisWeekMonday.getDate() - ((weeks - 1) * 7));
 
+    // Generate heatmap data for each week
     for (let week = 0; week < weeks; week++) {
       const weekData = [];
-      for (let day = 0; day < daysPerWeek; day++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + (week * daysPerWeek) + day);
+      
+      // Generate data for each day of the week (Monday to Sunday)
+      for (let dayOfWeek = 0; dayOfWeek < daysPerWeek; dayOfWeek++) {
+        const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + (week * 7) + dayOfWeek);
         
-        const dateString = currentDate.toISOString().split('T')[0];
+        // Use local date string instead of UTC
+        const dateString = getLocalDateString(currentDate);
         const dayDuration = getTotalDurationForDate(dateString);
         
         // Normalize intensity (0-1) based on hours worked
@@ -306,6 +330,7 @@ export const DataProvider = ({ children }) => {
         const intensity = Math.min(dayDuration / (8 * 3600), 1);
         weekData.push(intensity);
       }
+      
       heatmapData.push(weekData);
     }
 

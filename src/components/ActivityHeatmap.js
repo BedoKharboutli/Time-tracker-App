@@ -7,7 +7,7 @@ import { useCustomization } from '../context/CustomizationContext';
 const ActivityHeatmap = () => {
   const { getActivityHeatmapData } = useData();
   const { getCurrentTheme, getCurrentFont } = useCustomization();
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   
   // Get real heatmap data from user sessions
   const heatmapData = getActivityHeatmapData();
